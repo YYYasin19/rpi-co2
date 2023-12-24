@@ -3,7 +3,7 @@ use serial::core::{BaudRate, CharSize, FlowControl, Parity, PortSettings, StopBi
 use serial::prelude::*;
 use serial::unix::TTYPort;
 use std::io::{Read, Write};
-use std::usize;
+
 use std::{thread, time::Duration};
 
 use mh_z19::{parse_gas_concentration_ppm, read_gas_concentration};
