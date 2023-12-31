@@ -2,6 +2,7 @@ extern crate serial;
 use serial::core::{BaudRate, CharSize, FlowControl, Parity, PortSettings, StopBits};
 use serial::prelude::*;
 use serial::unix::TTYPort;
+use std::env;
 use std::io::{Read, Write};
 
 use std::{thread, time::Duration};
@@ -30,8 +31,10 @@ fn check_port(serial: &mut TTYPort) {
 }
 
 fn main() {
-    const DEVICE: &str = "/dev/ttys028";
-    let mut serial = build_port(DEVICE).unwrap();
+    // read from environment variable CO2_DEVICE
+    let device = env::var("CO2_DEVICE").unwrap_or("/dev/ttyAMA0".to_string());
+    println!("Reading from device: {}", device);
+    let mut serial = build_port(&device).unwrap();
     check_port(&mut serial);
 
     // read from port and write to stdout
@@ -60,6 +63,6 @@ fn main() {
         }
 
         // sleep a few seconds
-        thread::sleep(Duration::from_secs(5));
+        thread::sleep(Duration::from_secs(1));
     }
 }
