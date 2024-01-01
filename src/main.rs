@@ -53,7 +53,9 @@ fn main() {
         match serial.read(&mut response[..]) {
             Ok(t) => {
                 println!("Read {} bytes", t);
-                println!("Read: {:?}", response);
+                let hex_string: Vec<String> =
+                    response.iter().map(|b| format!("{:02x}", b)).collect();
+                println!("Read: {:?}", hex_string);
                 match parse_gas_concentration_ppm(&response) {
                     Ok(ppm) => println!("CO2: {} ppm", ppm),
                     Err(e) => eprintln!("Failed to parse response: {:?}", e),
