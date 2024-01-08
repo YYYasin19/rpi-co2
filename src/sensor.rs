@@ -79,8 +79,7 @@ impl Sensor {
         // read response
         let mut response: Vec<u8> = vec![0; 9];
         match self.port.read(&mut response[..]) {
-            Ok(t) => {
-                println!("Read {} bytes", t);
+            Ok(_) => {
                 let hex_string: Vec<String> =
                     response.iter().map(|b| format!("{:02x}", b)).collect();
                 println!("Read: {:?}", hex_string);
