@@ -79,5 +79,9 @@ fn main() {
             return;
         }
     }
-    sensor.read_ppm();
+
+    for _ in 0..5 {
+        sensor.read_ppm();
+        thread::sleep(Duration::from_secs(1));
+    }
 }
