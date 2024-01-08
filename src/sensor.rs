@@ -38,7 +38,7 @@ impl Sensor {
         let packet = read_gas_concentration(0x1);
         match self.port.write(&packet) {
             Ok(_) => {
-                println!("Sent test command with 8 bytes");
+                println!("Sent [read_gas_concentration] command.");
                 true
             }
             Err(e) => {
