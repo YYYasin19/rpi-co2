@@ -80,7 +80,7 @@ fn main() {
         }
     }
 
-    for _ in 0..5 {
+    for _ in 0..50 {
         match sensor.read_ppm() {
             Some(ppm) => println!("CO2: {} ppm", ppm),
             None => println!("Failed to read CO2"),
