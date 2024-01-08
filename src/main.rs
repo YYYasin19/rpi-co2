@@ -81,7 +81,10 @@ fn main() {
     }
 
     for _ in 0..5 {
-        sensor.read_ppm();
+        match sensor.read_ppm() {
+            Some(ppm) => println!("CO2: {} ppm", ppm),
+            None => println!("Failed to read CO2"),
+        }
         thread::sleep(Duration::from_secs(1));
     }
 }
