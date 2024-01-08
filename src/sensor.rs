@@ -35,7 +35,7 @@ impl Sensor {
      * This function should send the test command to the sensor
      */
     pub fn check_port(&mut self) -> bool {
-        let packet = read_gas_concentration(0x1);
+        let packet = read_gas_concentration(self.device_number);
         match self.port.write(&packet) {
             Ok(_) => {
                 println!("Sent [read_gas_concentration] command.");
