@@ -62,6 +62,13 @@ impl Sensor {
      * Reads the gas concentration in ppm from the sensor
      */
     pub fn read_ppm(&mut self) -> Option<u32> {
+        // clear serial port buffer first
+        let mut buf: Vec<u8> = vec![0; 9];
+        match self.port.read(&mut buf[..]) {
+            Ok(_) => println!("Cleared serial port buffer"),
+            Err(e) => eprintln!("Failed to clear serial port buffer: {:?}", e),
+        }
+
         let read_gas_cmd = read_gas_concentration(self.device_number);
         match self.port.write(&read_gas_cmd) {
             Ok(_) => println!("Sent [read gas concentration] command"),
