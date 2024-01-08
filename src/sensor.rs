@@ -39,7 +39,17 @@ impl Sensor {
         match self.port.write(&packet) {
             Ok(_) => {
                 println!("Sent [read_gas_concentration] command.");
-                true
+                let mut response_vec: Vec<u8> = vec![0; 9];
+                match self.port.read(&mut response_vec[..]) {
+                    Ok(_) => {
+                        println!("Read response: {:?}", response_vec);
+                        true
+                    }
+                    Err(e) => {
+                        eprintln!("Failed to read response: {:?}", e);
+                        false
+                    }
+                }
             }
             Err(e) => {
                 eprintln!("Failed to send command: {:?}", e);
