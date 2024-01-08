@@ -79,7 +79,7 @@ fn main() {
             return;
         }
     }
-
+    sensor.clear_buffer();
     for _ in 0..50 {
         match sensor.read_ppm() {
             Some(ppm) => println!("CO2: {} ppm", ppm),
