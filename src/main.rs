@@ -11,7 +11,7 @@ use mh_z19::{parse_gas_concentration_ppm, read_gas_concentration};
 
 fn build_port(device: &str) -> Result<TTYPort, serial::Error> {
     let settings: PortSettings = PortSettings {
-        baud_rate: BaudRate::Baud115200,
+        baud_rate: BaudRate::Baud9600,
         char_size: CharSize::Bits8,
         parity: Parity::ParityNone,
         stop_bits: StopBits::Stop1,
