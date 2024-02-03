@@ -71,6 +71,7 @@ impl Sensor {
      */
     pub fn read_ppm(&mut self) -> Option<u32> {
         let read_gas_cmd = read_gas_concentration(self.device_number);
+        let read_gas_cmd = [0xff, 0x01, 0x86, 0x00, 0x00, 0x00, 0x00, 0x00];
         match self.port.write(&read_gas_cmd) {
             Ok(_) => println!("Sent [read gas concentration] command"),
             Err(e) => eprintln!("Failed to send command: {:?}", e),
