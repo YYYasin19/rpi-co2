@@ -75,16 +75,9 @@ fn main() {
     match sensor.check_port() {
         true => println!("Port is open 📶"),
         false => {
-            println!("Port is closed. Quittung!");
+            println!("Port is closed. Quitting!");
             return;
         }
     }
-    sensor.clear_buffer();
-    for _ in 0..50 {
-        match sensor.read_ppm() {
-            Some(ppm) => println!("CO2: {} ppm", ppm),
-            None => println!("Failed to read CO2"),
-        }
-        thread::sleep(Duration::from_secs(1));
-    }
+    sensor.read_ppm_loop();
 }

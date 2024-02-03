@@ -69,35 +69,37 @@ impl Sensor {
     /*
      * Reads the gas concentration in ppm from the sensor
      */
-    pub fn read_ppm(&mut self) -> Option<u32> {
-        let read_gas_cmd = read_gas_concentration(self.device_number);
-        let read_gas_cmd = [0xff, 0x01, 0x86, 0x00, 0x00, 0x00, 0x00, 0x00];
-        match self.port.write(&read_gas_cmd) {
-            Ok(_) => println!("Sent [read gas concentration] command"),
-            Err(e) => eprintln!("Failed to send command: {:?}", e),
-        }
+    pub fn read_ppm_loop(&mut self) {
+        loop {
+            let read_gas_cmd = read_gas_concentration(self.device_number);
+            let read_gas_cmd = [0xff, 0x01, 0x86, 0x00, 0x00, 0x00, 0x00, 0x00];
+            match self.port.write(&read_gas_cmd) {
+                Ok(_) => println!("Sent [read gas concentration] command"),
+                Err(e) => eprintln!("Failed to send command: {:?}", e),
+            }
 
-        // read response
-        let mut response: Vec<u8> = vec![0; 9];
-        match self.port.read(&mut response[..]) {
-            Ok(_) => {
-                let hex_string: Vec<String> =
-                    response.iter().map(|b| format!("{:02x}", b)).collect();
-                println!("Read: {:?}", hex_string);
-                match parse_gas_concentration_ppm(&response) {
-                    Ok(ppm) => return Some(ppm),
-                    Err(e) => {
-                        eprintln!(
-                            "Failed to parse response: {:?} for {:?}",
-                            e, self.serial_device
-                        );
-                        return None;
+            // read response
+            let mut response: Vec<u8> = vec![0; 9];
+            match self.port.read(&mut response[..]) {
+                Ok(_) => {
+                    let hex_string: Vec<String> =
+                        response.iter().map(|b| format!("{:02x}", b)).collect();
+                    println!("Read: {:?}", hex_string);
+                    match parse_gas_concentration_ppm(&response) {
+                        Ok(ppm) => {
+                            println!("CO2: {} ppm", ppm);
+                        }
+                        Err(e) => {
+                            eprintln!(
+                                "Failed to parse response: {:?} for {:?}",
+                                e, self.serial_device
+                            );
+                        }
                     }
                 }
-            }
-            Err(e) => {
-                eprintln!("Failed to read from port: {:?}", e);
-                return None;
+                Err(e) => {
+                    eprintln!("Failed to read from port: {:?}", e);
+                }
             }
         }
     }
