@@ -13,7 +13,7 @@ pub struct Sensor {
 }
 
 impl Sensor {
-    pub fn new(device: &str) -> Result<Self, serial::Error> {
+    pub fn new(device: String) -> Result<Self, serial::Error> {
         let settings: serial::PortSettings = serial::PortSettings {
             baud_rate: serial::BaudRate::Baud9600,
             char_size: serial::CharSize::Bits8,
@@ -21,9 +21,13 @@ impl Sensor {
             stop_bits: serial::StopBits::Stop1,
             flow_control: serial::FlowControl::FlowNone,
         };
-        let mut port = serial::open(device)?;
+        let mut port = serial::open(&device)?;
         port.set_timeout(Duration::from_secs(1))?;
         port.configure(&settings)?;
+        match port.write(&[0xff, 0x01, 0x86, 0x00, 0x00, 0x00, 0x00, 0x00]) {
+            Ok(_) => println!("Sent test command with 8 bytes"),
+            Err(e) => eprintln!("Failed to send command: {:?}", e),
+        }
         Ok(Self {
             port,
             serial_device: device.to_string(),
