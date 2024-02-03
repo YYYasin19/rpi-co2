@@ -2,7 +2,7 @@ use serial::unix::TTYPort;
 use serial::SerialPort;
 
 use std::io::{Read, Write};
-use std::time::Duration;
+use std::{thread, time::Duration};
 
 use mh_z19::{calibrate_zero_point, parse_gas_concentration_ppm, read_gas_concentration};
 
@@ -75,8 +75,9 @@ impl Sensor {
      */
     pub fn read_ppm_loop(&mut self) {
         loop {
-            let read_gas_cmd = read_gas_concentration(0x1);
-            match self.port.write(&read_gas_cmd) {
+            // write command
+            let packet = read_gas_concentration(0x1);
+            match self.port.write(&packet) {
                 Ok(_) => println!("Sent [read gas concentration] command"),
                 Err(e) => eprintln!("Failed to send command: {:?}", e),
             }
@@ -84,26 +85,21 @@ impl Sensor {
             // read response
             let mut response: Vec<u8> = vec![0; 9];
             match self.port.read(&mut response[..]) {
-                Ok(_) => {
+                Ok(t) => {
+                    println!("Read {} bytes", t);
                     let hex_string: Vec<String> =
                         response.iter().map(|b| format!("{:02x}", b)).collect();
                     println!("Read: {:?}", hex_string);
                     match parse_gas_concentration_ppm(&response) {
-                        Ok(ppm) => {
-                            println!("CO2: {} ppm", ppm);
-                        }
-                        Err(e) => {
-                            eprintln!(
-                                "Failed to parse response: {:?} for {:?}",
-                                e, self.serial_device
-                            );
-                        }
+                        Ok(ppm) => println!("CO2: {} ppm", ppm),
+                        Err(e) => eprintln!("Failed to parse response: {:?}", e),
                     }
                 }
-                Err(e) => {
-                    eprintln!("Failed to read from port: {:?}", e);
-                }
+                Err(e) => eprintln!("Failed to read from port: {:?}", e),
             }
+
+            // sleep a few seconds
+            thread::sleep(Duration::from_secs(1));
         }
     }
 
