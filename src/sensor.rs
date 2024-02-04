@@ -36,47 +36,12 @@ impl Sensor {
     }
 
     /*
-     * This function should send the test command to the sensor
-     */
-    pub fn check_port(&mut self) -> bool {
-        let packet = read_gas_concentration(self.device_number);
-        match self.port.write(&packet) {
-            Ok(_) => {
-                println!("Sent [read_gas_concentration] command.");
-                let mut response_vec: Vec<u8> = vec![0; 9];
-                match self.port.read(&mut response_vec[..]) {
-                    Ok(_) => {
-                        println!("Read response: {:?}", response_vec);
-                        true
-                    }
-                    Err(e) => {
-                        eprintln!("Failed to read response: {:?}", e);
-                        false
-                    }
-                }
-            }
-            Err(e) => {
-                eprintln!("Failed to send command: {:?}", e);
-                false
-            }
-        }
-    }
-
-    pub fn clear_buffer(&mut self) {
-        let mut buffer: Vec<u8> = vec![0; 9];
-        match self.port.read(&mut buffer[..]) {
-            Ok(_) => println!("Cleared buffer"),
-            Err(e) => eprintln!("Failed to clear buffer: {:?}", e),
-        }
-    }
-
-    /*
      * Reads the gas concentration in ppm from the sensor
      */
     pub fn read_ppm_loop(&mut self) {
         loop {
             // write command
-            let packet = read_gas_concentration(0x1);
+            let packet = read_gas_concentration(self.device_number);
             match self.port.write(&packet) {
                 Ok(_) => println!("Sent [read gas concentration] command"),
                 Err(e) => eprintln!("Failed to send command: {:?}", e),
@@ -95,7 +60,10 @@ impl Sensor {
                         Err(e) => eprintln!("Failed to parse response: {:?}", e),
                     }
                 }
-                Err(e) => eprintln!("Failed to read from port: {:?}", e),
+                Err(e) => eprintln!(
+                    "Failed to read from port: {:?} on {:?}",
+                    e, self.serial_device
+                ),
             }
 
             // sleep a few seconds
