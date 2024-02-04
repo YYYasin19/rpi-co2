@@ -4,7 +4,6 @@ extern crate serial;
 use mh_z19::{parse_gas_concentration_ppm, read_gas_concentration};
 use serial::core::{BaudRate, CharSize, FlowControl, Parity, PortSettings, StopBits};
 use serial::prelude::*;
-use serial::unix::TTYPort;
 use std::env;
 use std::io::{Read, Write};
 use std::{thread, time::Duration};

@@ -56,7 +56,17 @@ impl Sensor {
                         response.iter().map(|b| format!("{:02x}", b)).collect();
                     println!("Read: {:?}", hex_string);
                     match parse_gas_concentration_ppm(&response) {
-                        Ok(ppm) => println!("CO2: {} ppm", ppm),
+                        Ok(ppm) => {
+                            // append to a file `values.csv` with timestamp, ppm
+                            let now = chrono::Local::now();
+                            let timestamp = now.format("%Y-%m-%d %H:%M:%S");
+                            let mut file = std::fs::OpenOptions::new()
+                                .append(true)
+                                .create(true)
+                                .open("values.csv")
+                                .unwrap();
+                            writeln!(file, "{},{}", timestamp, ppm).unwrap();
+                        }
                         Err(e) => eprintln!("Failed to parse response: {:?}", e),
                     }
                 }
@@ -75,6 +85,7 @@ impl Sensor {
      * Calibrate the sensor to zero.
      * Requires the sensor to be in a clean air environment (400ppm) for at least 20 minutes.
      */
+    #[allow(dead_code)]
     pub fn calibrate_zero(&mut self) -> Result<(), serial::Error> {
         let packet = calibrate_zero_point(0x1);
         self.port.write(&packet)?;

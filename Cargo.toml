@@ -3,6 +3,17 @@ name = "rpi-co2"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "cli"
+path = "src/bin/cli.rs"
+
+[[bin]]
+name = "server"
+path = "src/bin/server/mod.rs"
+
 [dependencies]
+chrono = "0.4.33"
 mh-z19 = "0.3.3"
+rocket = { version = "0.5.0", features = ["json"] }
+rocket_dyn_templates = { version = "0.1.0", features = ["tera"] }
 serial = "0.4.0"
