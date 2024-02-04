@@ -63,9 +63,10 @@ impl Sensor {
                             let mut file = std::fs::OpenOptions::new()
                                 .append(true)
                                 .create(true)
-                                .open("values.csv")
+                                .open("./values.csv")
                                 .unwrap();
                             writeln!(file, "{},{}", timestamp, ppm).unwrap();
+                            println!("{:?}", ppm);
                         }
                         Err(e) => eprintln!("Failed to parse response: {:?}", e),
                     }
