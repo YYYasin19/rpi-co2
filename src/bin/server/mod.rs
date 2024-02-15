@@ -6,12 +6,24 @@ use rocket_dyn_templates::{context, Template};
 
 #[get("/")]
 fn index() -> Template {
+    // read the values.csv file
+    let mut rdr = csv::Reader::from_path("values.csv").expect("Unable to open values.csv");
+    let mut co2values: Vec<i32> = vec![];
+    let mut timestamps: Vec<String> = vec![];
+    for result in rdr.records() {
+        let record = result.expect("Unable to read record");
+        timestamps.push(record[0].to_string());
+        let ppm: i32 = record[1].parse().expect("Unable to parse ppm");
+        co2values.push(ppm);
+    }
+
     Template::render(
         "index",
         context! {
             name: "Ferris",
             cool: "true",
-            co2values: vec![1, 2, 3]
+            timestamps: timestamps,
+            co2values: co2values,
         },
     )
 }

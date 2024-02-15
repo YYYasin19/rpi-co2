@@ -15,7 +15,7 @@
       var chart = new Chart(ctx, {
         type: "line",
         data: {
-          labels: [...Array({{ co2values | length }}).keys()],
+          labels: {{ timestamps }} || [...Array({{ co2values | length }}).keys()],
           datasets: [
             {
               label: "CO2 values",
