@@ -1,15 +1,22 @@
-#[macro_use]
-extern crate rocket;
-use std::vec;
+use axum::{routing::get, Json, Router};
+use serde::Serialize;
+use std::{fs::File, io::Read};
 
-use rocket_dyn_templates::{context, Template};
+#[derive(Serialize)]
+struct Co2Data {
+    timestamps: Vec<String>,
+    co2values: Vec<i32>,
+}
 
-#[get("/")]
-fn index() -> Template {
-    // read the values.csv file
-    let mut rdr = csv::Reader::from_path("values.csv").expect("Unable to open values.csv");
-    let mut co2values: Vec<i32> = vec![];
-    let mut timestamps: Vec<String> = vec![];
+async fn data() -> Json<Co2Data> {
+    let mut file = File::open("values.csv").expect("Unable to open values.csv");
+    let mut contents = String::new();
+    file.read_to_string(&mut contents)
+        .expect("Unable to read the file");
+
+    let mut rdr = csv::Reader::from_reader(contents.as_bytes());
+    let mut co2values: Vec<i32> = Vec::new();
+    let mut timestamps: Vec<String> = Vec::new();
     for result in rdr.records() {
         let record = result.expect("Unable to read record");
         timestamps.push(record[0].to_string());
@@ -17,29 +24,27 @@ fn index() -> Template {
         co2values.push(ppm);
     }
 
-    Template::render(
-        "index",
-        context! {
-            name: "Ferris",
-            cool: "true",
-            timestamps: timestamps,
-            co2values: co2values,
-        },
-    )
+    Json(Co2Data {
+        timestamps,
+        co2values,
+    })
 }
 
-#[get("/hello/<name>/<age>/<cool>")]
-fn hello(name: &str, age: u8, cool: bool) -> String {
-    if cool {
-        format!("You're a cool {} year old, {}!", age, name)
-    } else {
-        format!("{}, we need to talk about your coolness.", name)
-    }
+async fn hello() -> &'static str {
+    "Hello world!!"
 }
 
-#[launch]
-fn rocket() -> _ {
-    rocket::build()
-        .mount("/", routes![index, hello])
-        .attach(Template::fairing())
+async fn echo(req_body: String) -> String {
+    req_body
+}
+
+#[tokio::main]
+async fn main() {
+    let app = Router::new()
+        .route("/", get(hello))
+        .route("/echo", get(echo))
+        .route("/data", get(data));
+
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    axum::serve(listener, app).await.unwrap();
 }
