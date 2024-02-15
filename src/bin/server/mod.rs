@@ -1,6 +1,7 @@
 use axum::{routing::get, Json, Router};
 use serde::Serialize;
 use std::{fs::File, io::Read};
+use tower_http::services::ServeDir;
 
 #[derive(Serialize)]
 struct Co2Data {
@@ -43,7 +44,8 @@ async fn main() {
     let app = Router::new()
         .route("/", get(hello))
         .route("/echo", get(echo))
-        .route("/data", get(data));
+        .route("/data", get(data))
+        .nest_service("/ui", ServeDir::new("./rpi-co2-ui/dist/"));
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     axum::serve(listener, app).await.unwrap();
