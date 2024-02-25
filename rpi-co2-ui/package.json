@@ -9,6 +9,9 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
+  "prettier": {
+    "printWidth": 120
+  },
   "dependencies": {
     "autoprefixer": "^10.4.17",
     "chart.js": "^4.4.1",
