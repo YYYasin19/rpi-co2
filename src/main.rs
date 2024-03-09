@@ -1,13 +1,7 @@
 mod sensor;
 use sensor::Sensor;
 extern crate serial;
-use mh_z19::{parse_gas_concentration_ppm, read_gas_concentration};
-use serial::core::{BaudRate, CharSize, FlowControl, Parity, PortSettings, StopBits};
-use serial::prelude::*;
 use std::env;
-use std::io::{Read, Write};
-use std::{thread, time::Duration};
-
 fn main() {
     let args: Vec<String> = env::args().collect();
     let mock_mode = args.contains(&"--mock".to_string());

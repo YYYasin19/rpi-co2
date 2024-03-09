@@ -1,5 +1,6 @@
 use axum::{routing::get, Json, Router};
 use rand::Rng;
+use std::env;
 mod sensor;
 use sensor::Sensor;
 use serde::Serialize;
@@ -64,9 +65,16 @@ async fn echo(req_body: String) -> String {
 }
 
 #[allow(unused)]
-fn run_sensor() {
-    let mut sensor = Sensor::new_mock("/dev/ttyAMA0".to_string()).unwrap();
-    sensor.read_ppm_loop_mock();
+fn run_sensor(device: String, mock_mode: bool) {
+    if mock_mode {
+        println!("Running in mock mode");
+        let mut sensor = Sensor::new_mock(device).unwrap();
+        sensor.read_ppm_loop_mock();
+    } else {
+        println!("Reading from device: /dev/ttyAMA0");
+        let mut sensor = Sensor::new(device).unwrap();
+        sensor.read_ppm_loop();
+    }
 }
 
 #[tokio::main]
@@ -91,6 +99,14 @@ async fn main() {
         .nest_service("/ui", ServeDir::new("./rpi-co2-ui/dist/"));
 
     // start a new thread for the sensor
+    let co2_device = env::var("CO2_DEVICE").unwrap_or("/dev/ttyAMA0".to_string());
+    let mock_mode = env::args()
+        .collect::<Vec<String>>()
+        .contains(&"--mock".to_string());
+
+    std::thread::spawn(move || {
+        run_sensor(co2_device, mock_mode);
+    });
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     axum::serve(listener, app).await.unwrap();
