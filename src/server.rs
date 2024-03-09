@@ -38,6 +38,10 @@ async fn data() -> Json<Co2Data> {
     })
 }
 
+async fn health() -> &'static str {
+    "ok"
+}
+
 async fn dummy_data() -> Json<Co2Data> {
     let mut rng = rand::thread_rng();
     let co2values: Vec<i32> = (0..100).map(|_| rng.gen_range(10..100)).collect();
@@ -87,6 +91,7 @@ async fn main() {
     let app = Router::new()
         .route("/", get(hello))
         .route("/echo", get(echo))
+        .route("/health", get(health))
         .route("/data", get(data))
         .route("/dummy_data", get(dummy_data))
         .layer(

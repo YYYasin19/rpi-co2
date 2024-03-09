@@ -61,7 +61,7 @@ impl Sensor {
                 .open("./values.csv")
                 .unwrap();
             writeln!(file, "{},{}", timestamp, ppm).unwrap();
-            println!("{:?}", ppm);
+            // println!("{:?}", ppm);
             thread::sleep(Duration::from_secs(1));
         }
     }
@@ -97,7 +97,8 @@ impl Sensor {
                                 .open("./values.csv")
                                 .unwrap();
                             writeln!(file, "{},{}", timestamp, ppm).unwrap();
-                            println!("{:?}", ppm);
+                            // flush the file
+                            // println!("{:?}", ppm);
                         }
                         Err(e) => eprintln!("Failed to parse response: {:?}", e),
                     }

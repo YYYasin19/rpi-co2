@@ -8,7 +8,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Line } from "react-chartjs-2";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
@@ -68,6 +68,36 @@ async function fetchMeasurements(setValues: (values: CO2DataPoint[]) => void): P
     });
 }
 
+const HealthCheck = () => {
+  const [health, setHealth] = useState<boolean>(false);
+
+  useEffect(() => {
+    const updateHealth = async () => {
+      try {
+        const response = await fetch("http://localhost:3000/health");
+        const data = await response.text();
+        setHealth(data == "ok");
+      } catch (error) {
+        console.error("Failed to fetch health status", error);
+        setHealth(false);
+      }
+    };
+
+    updateHealth(); // Initial check
+    const interval = setInterval(updateHealth, 1000); // Update every second
+    return () => clearInterval(interval); // Cleanup on component unmount
+  }, []);
+
+  return (
+    <div>
+      <div className="flex items-center space-x-2">
+        <div className={`h-2 w-2 rounded-full ${health ? "bg-green-500" : "bg-red-500"}`}></div>
+        <span className="text-sm font-medium">{health ? "Healthy" : "Unhealthy"}</span>
+      </div>
+    </div>
+  );
+};
+
 export function Chart() {
   const [measurements, setMeasurements] = useState<CO2DataPoint[]>(dummyMeasurements);
 
@@ -84,11 +114,18 @@ export function Chart() {
       },
     ],
   };
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchMeasurements(setMeasurements);
+    }, 1000);
+
+    return () => clearInterval(interval); // Cleanup interval on component unmount
+  }, []);
+
   return (
     <div style={{ width: "80vw", height: "50vh" }}>
-      {" "}
-      {/* Adjusted to use viewport width and height for full screen */}
-      <button onClick={() => fetchMeasurements(setMeasurements)}>Reload</button>
+      <HealthCheck />
       <Line options={options} data={data} />
     </div>
   );
