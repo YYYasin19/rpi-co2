@@ -36,6 +36,37 @@ impl Sensor {
     }
 
     /*
+     * Create a mock sensor for testing. This one does not require the device to be connected.
+     */
+    #[allow(unused)]
+    pub fn new_mock(device: String) -> Result<Self, serial::Error> {
+        Ok(Self {
+            port: serial::open(&device)?,
+            serial_device: "/dev/ttyAMA0".to_string(),
+            device_number: 0x1,
+        })
+    }
+
+    /*
+     * Create a mock sensor for testing. This one does not require the device to be connected.
+     */
+    pub fn read_ppm_loop_mock(&mut self) {
+        loop {
+            let ppm = 400 + (rand::random::<u8>() % 100) as i32;
+            let now = chrono::Local::now();
+            let timestamp = now.format("%Y-%m-%d %H:%M:%S");
+            let mut file = std::fs::OpenOptions::new()
+                .append(true)
+                .create(true)
+                .open("./values.csv")
+                .unwrap();
+            writeln!(file, "{},{}", timestamp, ppm).unwrap();
+            println!("{:?}", ppm);
+            thread::sleep(Duration::from_secs(1));
+        }
+    }
+
+    /*
      * Reads the gas concentration in ppm from the sensor
      */
     pub fn read_ppm_loop(&mut self) {
