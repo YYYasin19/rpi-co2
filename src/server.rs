@@ -1,12 +1,13 @@
 use axum::{routing::get, Json, Router};
 use rand::Rng;
+mod sensor;
+use sensor::Sensor;
 use serde::Serialize;
 use std::{fs::File, io::Read};
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-
 // use tracing_subscriber;
 #[derive(Serialize)]
 struct Co2Data {
@@ -62,6 +63,12 @@ async fn echo(req_body: String) -> String {
     req_body
 }
 
+#[allow(unused)]
+fn run_sensor() {
+    let mut sensor = Sensor::new_mock("/dev/ttyAMA0".to_string()).unwrap();
+    sensor.read_ppm_loop_mock();
+}
+
 #[tokio::main]
 async fn main() {
     // init tracing subscriber so we see logs in the terminal
@@ -82,6 +89,8 @@ async fn main() {
         )
         .layer(TraceLayer::new_for_http())
         .nest_service("/ui", ServeDir::new("./rpi-co2-ui/dist/"));
+
+    // start a new thread for the sensor
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     axum::serve(listener, app).await.unwrap();
