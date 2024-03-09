@@ -51,7 +51,7 @@ const dummyMeasurements: CO2DataPoint[] = [
 ];
 
 async function fetchMeasurements(setValues: (values: CO2DataPoint[]) => void): Promise<void> {
-  return await fetch("http://localhost:3000/dummy_data", {})
+  return await fetch("http://localhost:3000/data", {})
     .then((res) => {
       if (!res.ok || res.status >= 300) {
         alert("Error fetching data");
@@ -59,6 +59,7 @@ async function fetchMeasurements(setValues: (values: CO2DataPoint[]) => void): P
       return res.json();
     })
     .then((data) => {
+      console.log(data);
       const results: CO2DataPoint[] = [];
       data["timestamps"].forEach((ts: string, idx: number) => {
         results.push({ timestamp: new Date(ts), value: data["co2values"][idx] });
@@ -70,7 +71,7 @@ async function fetchMeasurements(setValues: (values: CO2DataPoint[]) => void): P
 export function Chart() {
   const [measurements, setMeasurements] = useState<CO2DataPoint[]>(dummyMeasurements);
 
-  const sortedData = measurements.sort((a, b) => (a.timestamp > b.timestamp ? 1 : -1)).slice(0, 10);
+  const sortedData = measurements.sort((a, b) => (a.timestamp > b.timestamp ? 1 : -1));
   const data = {
     labels: sortedData.map((d) => d.timestamp.toLocaleTimeString()),
     datasets: [
