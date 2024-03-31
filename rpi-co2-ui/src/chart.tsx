@@ -50,8 +50,8 @@ const dummyMeasurements: CO2DataPoint[] = [
   },
 ];
 
-async function fetchMeasurements(setValues: (values: CO2DataPoint[]) => void): Promise<void> {
-  return await fetch("http://localhost:3000/data", {})
+async function fetchMeasurements(serverAdress: String, setValues: (values: CO2DataPoint[]) => void): Promise<void> {
+  return await fetch(`${serverAdress}/data`, {})
     .then((res) => {
       if (!res.ok || res.status >= 300) {
         alert("Error fetching data");
@@ -59,7 +59,7 @@ async function fetchMeasurements(setValues: (values: CO2DataPoint[]) => void): P
       return res.json();
     })
     .then((data) => {
-      console.log(data);
+      console.log(data, "from", serverAdress);
       const results: CO2DataPoint[] = [];
       data["timestamps"].forEach((ts: string, idx: number) => {
         results.push({ timestamp: new Date(ts), value: data["co2values"][idx] });
@@ -68,13 +68,13 @@ async function fetchMeasurements(setValues: (values: CO2DataPoint[]) => void): P
     });
 }
 
-const HealthCheck = () => {
+const HealthCheck = ({ serverAdress }: { serverAdress: String }) => {
   const [health, setHealth] = useState<boolean>(false);
 
   useEffect(() => {
     const updateHealth = async () => {
       try {
-        const response = await fetch("http://localhost:3000/health");
+        const response = await fetch(`${serverAdress}/health`);
         const data = await response.text();
         setHealth(data == "ok");
       } catch (error) {
@@ -86,22 +86,26 @@ const HealthCheck = () => {
     updateHealth(); // Initial check
     const interval = setInterval(updateHealth, 1000); // Update every second
     return () => clearInterval(interval); // Cleanup on component unmount
-  }, []);
+  }, [serverAdress]);
 
   return (
-    <div>
-      <div className="flex items-center space-x-2">
-        <div className={`h-2 w-2 rounded-full ${health ? "bg-green-500" : "bg-red-500"}`}></div>
-        <span className="text-sm font-medium">{health ? "Healthy" : "Unhealthy"}</span>
-      </div>
-    </div>
+    <h2>{health ? "Healthy" : "Unhealthy"}</h2>
+    // <div style={{ padding: "10px" }}>
+    //   <div className="flex items-center space-x-2">
+    //     <div className={`h-2 w-2 rounded-full ${health ? "bg-green-500" : "bg-red-500"}`}></div>
+    //     <span className="text-sm font-medium">{health ? "Healthy" : "Unhealthy"}</span>
+    //   </div>
+    // </div>
   );
 };
 
-export function Chart() {
+export function Chart({ serverAdress }: { serverAdress: string }) {
   const [measurements, setMeasurements] = useState<CO2DataPoint[]>(dummyMeasurements);
+  const [lastN, setLastN] = useState<number>(100);
+  const [refreshTimeMS, setRefreshTimeMS] = useState<number>(1000);
 
-  const sortedData = measurements.sort((a, b) => (a.timestamp > b.timestamp ? 1 : -1));
+  let sortedData = measurements.sort((a, b) => (a.timestamp > b.timestamp ? 1 : -1));
+  sortedData = sortedData.slice(-lastN);
   const data = {
     labels: sortedData.map((d) => d.timestamp.toLocaleTimeString()),
     datasets: [
@@ -117,16 +121,24 @@ export function Chart() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      fetchMeasurements(setMeasurements);
-    }, 1000);
+      fetchMeasurements(serverAdress, setMeasurements);
+    }, refreshTimeMS);
 
     return () => clearInterval(interval); // Cleanup interval on component unmount
-  }, []);
+  }, [serverAdress, refreshTimeMS]);
 
   return (
     <div style={{ width: "80vw", height: "50vh" }}>
-      <HealthCheck />
+      <HealthCheck serverAdress={serverAdress} />
       <Line options={options} data={data} />
+      <div>
+        <label>Last N</label>
+        <input type="number" value={lastN} onChange={(e) => setLastN(parseInt(e.target.value))} />
+      </div>
+      <div>
+        <label>Refresh Time (ms)</label>
+        <input type="number" value={refreshTimeMS} onChange={(e) => setRefreshTimeMS(parseInt(e.target.value))} />
+      </div>
     </div>
   );
 }

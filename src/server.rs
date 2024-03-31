@@ -125,6 +125,7 @@ async fn main() {
         run_sensor(co2_device, mock_mode.clone());
     });
 
+    println!("Listening on port {}", cli_args.server_port);
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{:?}", cli_args.server_port))
         .await
         .unwrap();
