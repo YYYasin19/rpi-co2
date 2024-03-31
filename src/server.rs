@@ -88,6 +88,8 @@ struct ServerCli {
     mock: bool,
     #[clap(long, default_value = "./rpi-co2-ui/dist/")]
     ui_path: String,
+    #[clap(long, default_value = "3000")]
+    server_port: u16,
 }
 
 #[tokio::main]
@@ -123,6 +125,8 @@ async fn main() {
         run_sensor(co2_device, mock_mode.clone());
     });
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3001").await.unwrap();
+    let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{:?}", cli_args.server_port))
+        .await
+        .unwrap();
     axum::serve(listener, app).await.unwrap();
 }
