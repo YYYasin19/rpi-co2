@@ -1,4 +1,5 @@
 use axum::{routing::get, Json, Router};
+use clap::Parser;
 use rand::Rng;
 use std::env;
 mod sensor;
@@ -81,6 +82,14 @@ fn run_sensor(device: String, mock_mode: bool) {
     }
 }
 
+#[derive(Parser)]
+struct ServerCli {
+    #[clap(long, short, action)]
+    mock: bool,
+    #[clap(long, default_value = "./rpi-co2-ui/dist/")]
+    ui_path: String,
+}
+
 #[tokio::main]
 async fn main() {
     // init tracing subscriber so we see logs in the terminal
@@ -88,6 +97,10 @@ async fn main() {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
+    // accept option --ui with path to custom folder or default to rpi-co2-ui/dist
+    let cli_args = ServerCli::parse();
+
+    println!("Starting server with UI path: {}", cli_args.ui_path);
     let app = Router::new()
         .route("/", get(hello))
         .route("/echo", get(echo))
@@ -101,14 +114,11 @@ async fn main() {
                 .allow_headers(Any),
         )
         .layer(TraceLayer::new_for_http())
-        .nest_service("/ui", ServeDir::new("./rpi-co2-ui/dist/"));
+        .nest_service("/ui", ServeDir::new(cli_args.ui_path.clone()));
 
     // start a new thread for the sensor
     let co2_device = env::var("CO2_DEVICE").unwrap_or("/dev/ttyAMA0".to_string());
-    let mock_mode = env::args()
-        .collect::<Vec<String>>()
-        .contains(&"--mock".to_string());
-
+    let mock_mode = cli_args.mock;
     std::thread::spawn(move || {
         run_sensor(co2_device, mock_mode.clone());
     });
