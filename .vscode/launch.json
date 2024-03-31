@@ -7,29 +7,11 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug executable 'rpi-co2'",
+      "name": "Debug executable 'server'",
       "cargo": {
-        "args": ["build", "--bin=rpi-co2", "--package=rpi-co2"],
-        "filter": {
-          "name": "rpi-co2",
-          "kind": "bin"
-        }
+        "args": ["build", "--bin", "server"]
       },
-      "args": [],
-      "cwd": "${workspaceFolder}"
-    },
-    {
-      "type": "lldb",
-      "request": "launch",
-      "name": "Debug unit tests in executable 'rpi-co2'",
-      "cargo": {
-        "args": ["test", "--no-run", "--bin=rpi-co2", "--package=rpi-co2"],
-        "filter": {
-          "name": "rpi-co2",
-          "kind": "bin"
-        }
-      },
-      "args": [],
+      "args": ["--mock"],
       "cwd": "${workspaceFolder}"
     }
   ]

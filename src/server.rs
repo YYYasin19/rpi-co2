@@ -110,9 +110,9 @@ async fn main() {
         .contains(&"--mock".to_string());
 
     std::thread::spawn(move || {
-        run_sensor(co2_device, mock_mode);
+        run_sensor(co2_device, mock_mode.clone());
     });
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3001").await.unwrap();
     axum::serve(listener, app).await.unwrap();
 }

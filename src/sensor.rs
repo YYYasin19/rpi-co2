@@ -7,7 +7,7 @@ use std::{thread, time::Duration};
 use mh_z19::{calibrate_zero_point, parse_gas_concentration_ppm, read_gas_concentration};
 
 pub struct Sensor {
-    port: TTYPort,
+    port: Option<TTYPort>,
     serial_device: String, // e.g. /dev/ttyAMA0
     device_number: u8,     // e.g. 0x1
 }
@@ -29,7 +29,7 @@ impl Sensor {
             Err(e) => eprintln!("Failed to send command: {:?}", e),
         }
         Ok(Self {
-            port,
+            port: Some(port),
             serial_device: device.to_string(),
             device_number: 0x1,
         })
@@ -41,7 +41,7 @@ impl Sensor {
     #[allow(unused)]
     pub fn new_mock(device: String) -> Result<Self, serial::Error> {
         Ok(Self {
-            port: serial::open(&device)?,
+            port: None,
             serial_device: "/dev/ttyAMA0".to_string(),
             device_number: 0x1,
         })
@@ -73,40 +73,41 @@ impl Sensor {
         loop {
             // write command
             let packet = read_gas_concentration(self.device_number);
-            match self.port.write(&packet) {
-                Ok(_) => println!("Sent [read gas concentration] command"),
-                Err(e) => eprintln!("Failed to send command: {:?}", e),
-            }
-
-            // read response
-            let mut response: Vec<u8> = vec![0; 9];
-            match self.port.read(&mut response[..]) {
-                Ok(t) => {
-                    println!("Read {} bytes", t);
-                    let hex_string: Vec<String> =
-                        response.iter().map(|b| format!("{:02x}", b)).collect();
-                    println!("Read: {:?}", hex_string);
-                    match parse_gas_concentration_ppm(&response) {
-                        Ok(ppm) => {
-                            // append to a file `values.csv` with timestamp, ppm
-                            let now = chrono::Local::now();
-                            let timestamp = now.format("%Y-%m-%d %H:%M:%S");
-                            let mut file = std::fs::OpenOptions::new()
-                                .append(true)
-                                .create(true)
-                                .open("./values.csv")
-                                .unwrap();
-                            writeln!(file, "{},{}", timestamp, ppm).unwrap();
-                            // flush the file
-                            // println!("{:?}", ppm);
-                        }
-                        Err(e) => eprintln!("Failed to parse response: {:?}", e),
-                    }
+            if let Some(ref mut port) = self.port {
+                match port.write(&packet) {
+                    Ok(_) => println!("Sent [read gas concentration] command"),
+                    Err(e) => eprintln!("Failed to send command: {:?}", e),
                 }
-                Err(e) => eprintln!(
-                    "Failed to read from port: {:?} on {:?}",
-                    e, self.serial_device
-                ),
+                // read response
+                let mut response: Vec<u8> = vec![0; 9];
+                match port.read(&mut response[..]) {
+                    Ok(t) => {
+                        println!("Read {} bytes", t);
+                        let hex_string: Vec<String> =
+                            response.iter().map(|b| format!("{:02x}", b)).collect();
+                        println!("Read: {:?}", hex_string);
+                        match parse_gas_concentration_ppm(&response) {
+                            Ok(ppm) => {
+                                // append to a file `values.csv` with timestamp, ppm
+                                let now = chrono::Local::now();
+                                let timestamp = now.format("%Y-%m-%d %H:%M:%S");
+                                let mut file = std::fs::OpenOptions::new()
+                                    .append(true)
+                                    .create(true)
+                                    .open("./values.csv")
+                                    .unwrap();
+                                writeln!(file, "{},{}", timestamp, ppm).unwrap();
+                                // flush the file
+                                // println!("{:?}", ppm);
+                            }
+                            Err(e) => eprintln!("Failed to parse response: {:?}", e),
+                        }
+                    }
+                    Err(e) => eprintln!(
+                        "Failed to read from port: {:?} on {:?}",
+                        e, self.serial_device
+                    ),
+                }
             }
 
             // sleep a few seconds
@@ -121,9 +122,11 @@ impl Sensor {
     #[allow(dead_code)]
     pub fn calibrate_zero(&mut self) -> Result<(), serial::Error> {
         let packet = calibrate_zero_point(0x1);
-        self.port.write(&packet)?;
-        let mut response: Vec<u8> = vec![0; 9];
-        self.port.read(&mut response[..])?;
+        if let Some(port) = &mut self.port {
+            port.write(&packet)?;
+            let mut response: Vec<u8> = vec![0; 9];
+            port.read(&mut response[..])?;
+        }
         Ok(())
     }
 }
