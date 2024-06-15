@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CO2 Data Chart</title>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        // -- Define the script that inserts the chart
+        document.addEventListener('DOMContentLoaded', function () {
+            Highcharts.chart('chart-container', {
+                chart: {
+                    type: 'line'
+                },
+                title: {
+                    text: 'CO2 Levels'
+                },
+                xAxis: {
+                    type: 'datetime',
+                    labels: {
+                        formatter: function () {
+                            return Highcharts.dateFormat('%H:%M:%S', this.value);
+                        }
+                    }
+                },
+                yAxis: {
+                    title: {
+                        text: 'CO2 Levels (ppm)'
+                    },
+                    min: 350,
+                    max: 2000
+                },
+                series: [{
+                    name: 'CO2 Levels',
+                    data: {{ data.co2values | safe }}
+                }]
+            });
+        });
+    </script>
+
+</head>
+
+<style>
+
+</style>
+
+<body>
+    <div class="flex flex-col gap-2 m-10 items-center mx-auto">
+        <div class="text-4xl mx-auto font-medium text-center">Hello</div>
+        <div id="chart-container" class="w-[80vw] rounded-xl border border-2 border-dashed border-red-500"></div>
+        <div class="container p-2 rounded-xl bg-neutral-100">
+            <span>Hi</span>
+            <span>This is some explanation for the above chart.</span>
+        </div>
+    </div>
+
+
+</body>
+
+</html>
