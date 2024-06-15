@@ -1,15 +1,16 @@
-use axum::{routing::get, Json, Router};
+use axum::{response::Html, routing::get, Router};
 use clap::Parser;
 use rand::Rng;
 use std::env;
 mod sensor;
+use minijinja::{context, Environment};
 use sensor::Sensor;
 use serde::Serialize;
 use std::{fs::File, io::Read};
 use tower_http::cors::{Any, CorsLayer};
-use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+
 // use tracing_subscriber;
 #[derive(Serialize)]
 struct Co2Data {
@@ -17,7 +18,7 @@ struct Co2Data {
     co2values: Vec<i32>,
 }
 
-async fn data() -> Json<Co2Data> {
+async fn data() -> Co2Data {
     let mut file = File::open("values.csv").expect("Unable to open values.csv");
     let mut contents = String::new();
     file.read_to_string(&mut contents)
@@ -33,17 +34,17 @@ async fn data() -> Json<Co2Data> {
         co2values.push(ppm);
     }
 
-    Json(Co2Data {
+    Co2Data {
         timestamps,
         co2values,
-    })
+    }
 }
 
 async fn health() -> &'static str {
     "ok"
 }
 
-async fn dummy_data() -> Json<Co2Data> {
+async fn dummy_data() -> Co2Data {
     let mut rng = rand::thread_rng();
     let co2values: Vec<i32> = (0..100).map(|_| rng.gen_range(10..100)).collect();
     let timestamps: Vec<String> = (0..100)
@@ -55,21 +56,47 @@ async fn dummy_data() -> Json<Co2Data> {
         .collect();
     // print before returning
 
-    Json(Co2Data {
+    Co2Data {
         timestamps,
         co2values,
-    })
+    }
 }
 
-async fn hello() -> &'static str {
-    "Hello world!!"
-}
-
+/// Dummy endpoint
 async fn echo(req_body: String) -> String {
     req_body
 }
 
-#[allow(unused)]
+/// Render a template using minijinja
+async fn render_template(data: Co2Data) -> Html<String> {
+    // TODO: instantiate this once instead of everytime
+    let mut env = Environment::new();
+    env.add_template("index.jinja2", include_str!("templates/index.jinja2"))
+        .unwrap();
+
+    let template = env.get_template("index.jinja2").unwrap();
+    let rendered = template.render(context! { data => data }).unwrap();
+    Html(rendered)
+}
+
+/// reads the data and returns a rendered template as HTML response
+async fn index() -> Html<String> {
+    let data = data().await;
+    render_template(data).await
+}
+
+/// reads dummy data and returns a rendered template as HTML response
+async fn dummy_index() -> Html<String> {
+    let data = dummy_data().await;
+    render_template(data).await
+}
+
+/// shows debug and configuration information
+async fn show_config() -> String {
+    let co2_device = env::var("CO2_DEVICE").unwrap_or("/dev/ttyAMA0".to_string());
+    format!("CO2_DEVICE: {}", co2_device)
+}
+
 fn run_sensor(device: String, mock_mode: bool) {
     if mock_mode {
         println!("Running in mock mode");
@@ -104,19 +131,19 @@ async fn main() {
 
     println!("Starting server with UI path: {}", cli_args.ui_path);
     let app = Router::new()
-        .route("/", get(hello))
-        .route("/echo", get(echo))
+        .route("/", get(index))
+        .route("/dummy", get(dummy_index))
         .route("/health", get(health))
-        .route("/data", get(data))
-        .route("/dummy_data", get(dummy_data))
+        .route("/echo", get(echo))
+        .route("/config", get(show_config))
         .layer(
             CorsLayer::new()
                 .allow_origin(Any)
                 .allow_methods(Any)
                 .allow_headers(Any),
         )
-        .layer(TraceLayer::new_for_http())
-        .nest_service("/ui", ServeDir::new(cli_args.ui_path.clone()));
+        .layer(TraceLayer::new_for_http());
+    // .nest_service("/ui", ServeDir::new(cli_args.ui_path.clone()));
 
     // start a new thread for the sensor
     let co2_device = env::var("CO2_DEVICE").unwrap_or("/dev/ttyAMA0".to_string());
